@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "firebase": {
+      "command": "cmd.exe",
+      "args": [
+        "/c",
+        "firebase",
+        "mcp"
+      ],
+      "env": {
+        "PATH": "C:\\Program Files\\nodejs;C:\\Users\\Pro\\AppData\\Roaming\\npm;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+      }
+    },
+    "github": {
+      "command": "cmd.exe",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_GITHUB_TOKEN_HERE",
+        "PATH": "C:\\Program Files\\nodejs;C:\\Users\\Pro\\AppData\\Roaming\\npm;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\"
+      }
+    }
+  }
+}

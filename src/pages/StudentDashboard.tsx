@@ -1530,13 +1530,24 @@ function ProfileDemo({
                       className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
                     />
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 mb-1">
+                      <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                         <span
                           className="text-[11px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1"
                           style={{ background: badge.bg, color: badge.color, border: `1px solid ${badge.border}` }}
                         >
                           {badge.emoji} {badge.label}
                         </span>
+                        {app.payment && (
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 ${
+                              app.payment.status === 'paid' 
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                : 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20'
+                            }`}
+                          >
+                            💳 {app.payment.status === 'paid' ? `ชำระแล้ว ฿${app.payment.amount.toLocaleString()}` : 'ฟรี (ยืนยันแล้ว)'}
+                          </span>
+                        )}
                       </div>
                       <h4 className="text-sm font-bold truncate leading-tight">
                         {app.campTitle}
@@ -1580,7 +1591,7 @@ function ProfileDemo({
                       }}
                       className="px-3 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300"
                     >
-                      ดูรายละเอียดเต็ม 🔍
+                      ดูข้อมูล & E-Ticket 📄
                     </button>
                   </div>
                 </div>

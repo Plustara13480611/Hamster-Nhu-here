@@ -22,6 +22,7 @@ import type {
   Camp,
   StudentProfile,
   CampApplication,
+  AdListing,
 } from '../types/models';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchSwipeHistory, recordSwipe, fetchChecklist, saveChecklist, fetchApplications } from '../services/studentService';
@@ -29,6 +30,7 @@ import { useNavigate } from 'react-router-dom';
 import DevTestBar from '../components/DevTestBar';
 import CampDetailModal from '../components/CampDetailModal';
 import SwiftPortLogo from '../components/SwiftPortLogo';
+import { getSystemCamps, getActiveSponsoredAds } from '../services/campService';
 import '../App.css';
 
 // ─── Icon Components ─────────────────────────────────────────────────────────
@@ -126,9 +128,11 @@ export default function StudentDashboard() {
   const [applications, setApplications] = useState<CampApplication[]>([]);
 
   const [history, setHistory] = useState<SwipeRecord[]>([]);
+  const [allCamps] = useState<Camp[]>(() => getSystemCamps());
+  const [sponsoredAds] = useState(() => getActiveSponsoredAds());
 
   // Camp lookup cache
-  const campLookup = useMemo(() => new Map(mockCamps.map(c => [c.id, c])), []);
+  const campLookup = useMemo(() => new Map(allCamps.map(c => [c.id, c])), [allCamps]);
 
   // Dynamic quest templates strictly tailored to student's registered target university and faculty!
   const questTemplates = useMemo(() => {
@@ -519,6 +523,8 @@ export default function StudentDashboard() {
             questSummary={summary}
             onOpenDetail={(camp, matchScore, matchBreakdown) => setDetailCamp({ camp, matchScore, matchBreakdown })}
             applications={applications}
+            allCamps={allCamps}
+            sponsoredAds={sponsoredAds}
           />
         ) : activeTab === 'quest' ? (
           <QuestDemo 
@@ -551,7 +557,7 @@ export default function StudentDashboard() {
             summary={summary}
             history={history}
             onOpenDetail={(camp: Camp) => {
-              const campData = mockCamps.find(c => c.id === camp.id) || camp;
+              const campData = allCamps.find(c => c.id === camp.id) || camp;
               setDetailCamp({ camp: campData });
             }}
             onChangeGoal={() => setShowGoalModal(true)}
@@ -585,6 +591,8 @@ function MatchDemo({
   questSummary,
   onOpenDetail,
   applications,
+  allCamps,
+  sponsoredAds,
 }: { 
   profile: StudentProfile; 
   history: SwipeRecord[]; 
@@ -595,12 +603,14 @@ function MatchDemo({
   questSummary: ReturnType<typeof getChecklistSummary>;
   onOpenDetail: (camp: Camp, matchScore?: number, matchBreakdown?: { tagScore: number; profileScore: number; affinityScore: number }) => void;
   applications: CampApplication[];
+  allCamps: Camp[];
+  sponsoredAds: AdListing[];
 }) {
   const [swipeAnimation, setSwipeAnimation] = useState<{ id: string; dir: 'left' | 'right' } | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
 
   // Camp lookup
-  const campLookup = useMemo(() => new Map(mockCamps.map(c => [c.id, c])), []);
+  const campLookup = useMemo(() => new Map(allCamps.map(c => [c.id, c])), [allCamps]);
 
   // Applied applications map
   const appliedMap = useMemo(() => {
@@ -614,9 +624,9 @@ function MatchDemo({
   // Compute Match Scores with Weighted Engine
   const matchResults = useMemo(() => {
     const affinityMap = buildAffinityMap(history, campLookup);
-    const unswiped = filterUnswipedCamps(mockCamps, history);
+    const unswiped = filterUnswipedCamps(allCamps, history);
     return computeMatchScores(profile, unswiped, affinityMap);
-  }, [history, campLookup, profile]);
+  }, [history, campLookup, profile, allCamps]);
 
   // Current top ranked card
   const currentMatch = matchResults[0];
@@ -709,6 +719,63 @@ function MatchDemo({
           </button>
         </div>
       </div>
+
+      {/* ─── Sponsored / Purchased Ad Space Banner ─── */}
+      {sponsoredAds && sponsoredAds.length > 0 && (
+        <div className="space-y-3">
+          {sponsoredAds.slice(0, 1).map(ad => (
+            <div
+              key={ad.id}
+              onClick={() => {
+                const foundCamp = allCamps.find(c => c.title === ad.title || c.description === ad.description) || allCamps[0];
+                if (foundCamp) onOpenDetail(foundCamp);
+              }}
+              className="rounded-3xl p-4 sm:p-5 border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer shadow-lg hover:shadow-xl transition-all group"
+              style={{
+                background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)',
+                borderColor: 'rgba(124, 58, 237, 0.35)',
+              }}
+            >
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="relative w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 shadow-md">
+                  <img
+                    src={ad.imageUrl || 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800'}
+                    alt={ad.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  />
+                  <span className="absolute top-1 left-1 text-[8px] font-black px-1.5 py-0.5 rounded bg-purple-600 text-white shadow-sm">
+                    SPONSORED
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-slate-900 shadow-sm">
+                      🌟 ค่ายแนะนำพิเศษ (Featured)
+                    </span>
+                    <span className="text-xs text-purple-600 dark:text-purple-400 font-bold truncate">
+                      โดย {ad.organizerName}
+                    </span>
+                  </div>
+                  <h4 className="text-base font-black truncate mt-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                    {ad.title}
+                  </h4>
+                  <p className="text-xs truncate" style={{ color: 'var(--color-muted)' }}>
+                    {ad.description}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="px-4 py-2 rounded-xl text-xs font-extrabold text-white gradient-brand shadow-md whitespace-nowrap flex items-center gap-1 group-hover:scale-105 transition-transform"
+              >
+                <span>{ad.ctaText || 'ดูรายละเอียดค่าย'}</span>
+                <span>→</span>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* ─── Swipe Area + Sidebar ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

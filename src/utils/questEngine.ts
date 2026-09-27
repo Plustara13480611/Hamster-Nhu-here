@@ -31,7 +31,6 @@ import type {
   LevelThreshold,
   SwipeRecord,
   Camp,
-  Tag,
 } from '../types/models';
 import { LEVEL_THRESHOLDS } from '../types/models';
 
@@ -51,16 +50,178 @@ export function getLevelProgress(xp: number): { level: LevelThreshold; progressP
 // ─── Initialize Checklist ────────────────────────────────────────────────────
 
 /**
- * สร้าง Checklist ใหม่สำหรับนักเรียน จาก QuestTemplate
- * เรียกเมื่อนักเรียนเลือกเป้าหมาย university/faculty
+ * สร้าง Quest Templates ตามเป้าหมายคณะและมหาวิทยาลัยของนักเรียน
+ */
+export function getQuestTemplatesForStudent(
+  universityTarget?: string,
+  facultyTarget?: string,
+): QuestTemplate[] {
+  const fac = (facultyTarget || '').toLowerCase();
+  
+  const facultySpecificQuests: QuestTemplate[] = [];
+
+  if (fac.includes('แพทย์') || fac.includes('หมอ') || fac.includes('พยาบาล') || fac.includes('ทันตะ') || fac.includes('สาธารณสุข')) {
+    facultySpecificQuests.push(
+      {
+        id: 'quest-fac-01',
+        title: 'สำรวจค่ายสายแพทย์ & สุขภาพ',
+        description: 'ปัดขวา (สนใจ) ค่ายด้านการแพทย์ ชีววิทยา หรือวิทยาศาสตร์สุขภาพ 1 ค่าย',
+        category: 'camp',
+        xpReward: 80,
+        requiredTags: ['Medicine', 'Health', 'Biology', 'Science'],
+        requiredCount: 1,
+        autoCheckable: true,
+      },
+      {
+        id: 'quest-fac-02',
+        title: 'กิจกรรมจิตอาสาโรงพยาบาล/ชุมชน',
+        description: 'เข้าร่วมกิจกรรมบำเพ็ญประโยชน์ หรือค่ายอาสาสมัครด้านสาธารณสุข',
+        category: 'volunteer',
+        xpReward: 100,
+        requiredTags: ['Social', 'Health', 'Leadership'],
+        requiredCount: 1,
+        autoCheckable: true,
+      }
+    );
+  } else if (fac.includes('บริหาร') || fac.includes('บัญชี') || fac.includes('เศรษฐ') || fac.includes('การตลาด') || fac.includes('ธุรกิจ')) {
+    facultySpecificQuests.push(
+      {
+        id: 'quest-fac-01',
+        title: 'สำรวจค่ายแผนธุรกิจ & Startup',
+        description: 'ปัดขวา (สนใจ) ค่ายด้านบริหารธุรกิจ นวัตกรรม หรือการเงิน 1 ค่าย',
+        category: 'camp',
+        xpReward: 80,
+        requiredTags: ['Business', 'Management', 'Innovation'],
+        requiredCount: 1,
+        autoCheckable: true,
+      },
+      {
+        id: 'quest-fac-02',
+        title: 'แข่งขันแผนธุรกิจหรือเวทีผู้นำเยาวชน',
+        description: 'เข้าร่วมการแข่งขัน Case Competition หรือค่ายพัฒนาภาวะผู้นำ',
+        category: 'competition',
+        xpReward: 120,
+        requiredTags: ['Competition', 'Leadership'],
+        requiredCount: 1,
+        autoCheckable: true,
+      }
+    );
+  } else if (fac.includes('ศิลป') || fac.includes('ออก') || fac.includes('สถาปัตย์') || fac.includes('นิเทศ')) {
+    facultySpecificQuests.push(
+      {
+        id: 'quest-fac-01',
+        title: 'สำรวจค่ายด้านการออกแบบ & ครีเอทีฟ',
+        description: 'ปัดขวา (สนใจ) ค่ายศิลปะ ครีเอทีฟโค้ดดิ้ง หรือออกแบบ 1 ค่าย',
+        category: 'camp',
+        xpReward: 80,
+        requiredTags: ['Design', 'Art', 'Creative'],
+        requiredCount: 1,
+        autoCheckable: true,
+      },
+      {
+        id: 'quest-fac-02',
+        title: 'สร้างสรรค์ผลงานชิ้นเอก (Masterpiece)',
+        description: 'จัดทำผลงานศิลปะ การออกแบบ หรือสื่อสร้างสรรค์ลงในพอร์ต',
+        category: 'project',
+        xpReward: 100,
+        requiredCount: 1,
+        autoCheckable: false,
+      }
+    );
+  } else {
+    // Default: วิศวกรรม & เทคโนโลยี / STEM
+    facultySpecificQuests.push(
+      {
+        id: 'quest-fac-01',
+        title: 'สำรวจค่ายวิศวกรรม & เทคโนโลยี',
+        description: 'ปัดขวา (สนใจ) ค่ายหุ่นยนต์ โค้ดดิ้ง หรือ STEM 1 ค่าย',
+        category: 'camp',
+        xpReward: 80,
+        requiredTags: ['Technology', 'Robotics', 'Science'],
+        requiredCount: 1,
+        autoCheckable: true,
+      },
+      {
+        id: 'quest-fac-02',
+        title: 'เข้าร่วมการแข่งขันวิชาการหรือโอลิมปิก',
+        description: 'เข้าร่วมแข่งขัน Hackathon, Science Fair หรือการแข่งขันทักษะวิชาการ',
+        category: 'competition',
+        xpReward: 120,
+        requiredTags: ['Competition', 'Math', 'Academic'],
+        requiredCount: 1,
+        autoCheckable: true,
+      }
+    );
+  }
+
+  // Core General Quests for all students
+  const coreQuests: QuestTemplate[] = [
+    {
+      id: 'quest-core-01',
+      title: 'ก้าวแรกสู่อนาคต: สำรวจค่ายที่ใช่',
+      description: 'ปัดขวา (สนใจ) ค่ายใดก็ได้เพื่อเริ่มเก็บสะสมกิจกรรมลงพอร์ต 1 ค่าย',
+      category: 'camp',
+      xpReward: 50,
+      requiredCount: 1,
+      autoCheckable: true,
+    },
+    {
+      id: 'quest-core-02',
+      title: 'สร้างฐานพอร์ตฟอลิโอ: เลือกค่าย 3 ค่าย',
+      description: 'ปัดขวาค่ายที่สนใจรวม 3 ค่าย เพื่อเพิ่มโอกาสในการติดรอบ Portfolio',
+      category: 'camp',
+      xpReward: 70,
+      requiredCount: 3,
+      autoCheckable: true,
+    },
+    {
+      id: 'quest-core-03',
+      title: 'พัฒนาทักษะความเป็นผู้นำและการสื่อสาร',
+      description: 'เข้าร่วมค่ายหรือเวิร์กช็อปที่มีเนื้อหาด้าน Leadership หรือการทำงานเป็นทีม',
+      category: 'leadership',
+      xpReward: 60,
+      requiredTags: ['Leadership', 'Communication', 'Social'],
+      requiredCount: 1,
+      autoCheckable: true,
+    },
+    {
+      id: 'quest-core-04',
+      title: 'ตรวจเช็คเกณฑ์และเตรียมเอกสาร Portfolio',
+      description: `ตรวจสอบเกณฑ์คุณสมบัติของ ${universityTarget || 'มหาวิทยาลัยเป้าหมาย'} และอัปโหลดดราฟต์พอร์ต`,
+      category: 'project',
+      xpReward: 100,
+      requiredCount: 1,
+      autoCheckable: false,
+    },
+    {
+      id: 'quest-core-05',
+      title: 'สะสมชั่วโมงกิจกรรมเพื่อสังคม (Social Impact)',
+      description: 'ทำกิจกรรมจิตอาสาหรือเข้าร่วมกิจกรรมช่วยเหลือสังคมอย่างน้อย 1 กิจกรรม',
+      category: 'volunteer',
+      xpReward: 70,
+      requiredTags: ['Social', 'Leadership'],
+      requiredCount: 1,
+      autoCheckable: true,
+    },
+  ];
+
+  return [...facultySpecificQuests, ...coreQuests];
+}
+
+/**
+ * สร้าง Checklist ใหม่สำหรับนักเรียน จาก QuestTemplate ที่สอดคล้องกับเป้าหมาย
  */
 export function initializeChecklist(
   studentId: string,
-  templates: QuestTemplate[],
+  templates?: QuestTemplate[],
   universityTarget?: string,
   facultyTarget?: string,
 ): PortfolioChecklist {
-  const quests: QuestProgress[] = templates.map(template => ({
+  const activeTemplates = (templates && templates.length > 0)
+    ? templates
+    : getQuestTemplatesForStudent(universityTarget, facultyTarget);
+
+  const quests: QuestProgress[] = activeTemplates.map(template => ({
     questId: template.id,
     currentCount: 0,
     completed: false,
@@ -94,12 +255,6 @@ interface AutoCheckResult {
 
 /**
  * ตรวจสอบและ auto-check quests ที่ทำครบตามเงื่อนไขแล้ว
- *
- * Logic:
- * 1. ดู swipe history → หาค่ายที่ปัดขวา (สนใจ/เข้าร่วม)
- * 2. ดู tags ของค่ายเหล่านั้น
- * 3. เทียบกับ quest ที่ต้องการ requiredTags + requiredCount
- * 4. ถ้าครบ → mark completed, ให้ XP
  */
 export function evaluateAutoQuests(
   checklist: PortfolioChecklist,
@@ -113,26 +268,15 @@ export function evaluateAutoQuests(
   // นับค่ายที่ปัดขวา จัดกลุ่มตาม tag
   const rightSwipes = swipeHistory.filter(s => s.action === 'right' || s.action === 'super_right');
   
-  // tag → จำนวนค่ายที่ปัดขวาแล้วมี tag นี้
-  const tagCounts = new Map<Tag, number>();
-  // category → จำนวนค่ายที่ปัดขวา
   const swipedCampIds = new Set<string>();
-  
   for (const swipe of rightSwipes) {
-    const camp = campLookup.get(swipe.campId);
-    if (!camp) continue;
-    swipedCampIds.add(camp.id);
-    
-    for (const tag of camp.tags) {
-      const key = tag.toLowerCase();
-      tagCounts.set(key, (tagCounts.get(key) ?? 0) + 1);
+    if (campLookup.has(swipe.campId)) {
+      swipedCampIds.add(swipe.campId);
     }
   }
 
-  // วนทุก quest ที่ยังไม่เสร็จ
+  // วนทุก quest
   for (const questProgress of checklist.quests) {
-    if (questProgress.completed) continue;
-
     const template = templates.find(t => t.id === questProgress.questId);
     if (!template || !template.autoCheckable) continue;
 
@@ -140,15 +284,14 @@ export function evaluateAutoQuests(
     let count = 0;
 
     if (template.requiredTags && template.requiredTags.length > 0) {
-      // นับค่ายที่ปัดขวา ที่มี tag ตรงกับ requiredTags ครบทุกตัว
       for (const campId of swipedCampIds) {
         const camp = campLookup.get(campId);
         if (!camp) continue;
         
         const campTagsLower = new Set(camp.tags.map(t => t.toLowerCase()));
-        const allTagsMatch = template.requiredTags.every(t => campTagsLower.has(t.toLowerCase()));
-        
-        if (allTagsMatch) count++;
+        const reqLower = template.requiredTags.map(t => t.toLowerCase());
+        const hasMatch = reqLower.some(rt => campTagsLower.has(rt));
+        if (hasMatch) count++;
       }
     } else {
       // ไม่ระบุ tag → นับจำนวนค่ายที่ปัดขวาทั้งหมด

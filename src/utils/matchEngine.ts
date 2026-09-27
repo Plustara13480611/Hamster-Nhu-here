@@ -73,8 +73,9 @@ export function buildAffinityMap(
       -0.3; // left
 
     for (const tag of camp.tags) {
-      const current = affinity.get(tag) ?? 0;
-      affinity.set(tag, Math.max(0, current + weight)); // ไม่ให้ติดลบ
+      const key = tag.toLowerCase();
+      const current = affinity.get(key) ?? 0;
+      affinity.set(key, Math.max(0, current + weight)); // ไม่ให้ติดลบ
     }
   }
 
@@ -86,10 +87,48 @@ export function buildAffinityMap(
 function computeTagScore(student: StudentProfile, camp: Camp): number {
   if (camp.tags.length === 0) return 25; // ไม่มี tag = ให้กลางๆ
 
-  const studentTags = new Set(student.interests.map(t => t.toLowerCase()));
-  const matched = camp.tags.filter(t => studentTags.has(t.toLowerCase()));
+  const studentTags = new Set((student.interests || []).map(t => t.toLowerCase()));
 
-  return (matched.length / camp.tags.length) * 50;
+  // Add target faculty keywords to tag matching
+  if (student.targetFaculty) {
+    const fac = student.targetFaculty.toLowerCase();
+    studentTags.add(fac.replace(/คณะ/g, '').trim());
+    if (/แพทย์|หมอ|พยาบาล|ทันตะ|เภสัช|สาธารณสุข|biology|health|medicine/i.test(fac)) {
+      studentTags.add('medicine');
+      studentTags.add('health');
+      studentTags.add('biology');
+      studentTags.add('science');
+    }
+    if (/วิศว|คอม|หุ่นยนต์|ai|robot|tech|engineer/i.test(fac)) {
+      studentTags.add('technology');
+      studentTags.add('robotics');
+      studentTags.add('science');
+      studentTags.add('math');
+    }
+    if (/บริหาร|บัญชี|เศรษฐ|การตลาด|bba|business|startup/i.test(fac)) {
+      studentTags.add('business');
+      studentTags.add('leadership');
+      studentTags.add('management');
+      studentTags.add('competition');
+    }
+    if (/ศิลป|ออก|สถาปัตย์|นิเทศ|ดีไซน์|design|creative/i.test(fac)) {
+      studentTags.add('design');
+      studentTags.add('art');
+      studentTags.add('creative');
+    }
+    if (/วิทยาศาสตร์|science|ฟิสิกส์|เคมี/i.test(fac)) {
+      studentTags.add('science');
+      studentTags.add('chemistry');
+      studentTags.add('physics');
+    }
+  }
+
+  const matched = camp.tags.filter(t => {
+    const lower = t.toLowerCase();
+    return studentTags.has(lower) || Array.from(studentTags).some(st => st.length >= 3 && (lower.includes(st) || st.includes(lower)));
+  });
+
+  return Math.min(50, Math.round((matched.length / camp.tags.length) * 50));
 }
 
 // ─── Profile Score (0-20) ────────────────────────────────────────────────────
@@ -97,20 +136,55 @@ function computeTagScore(student: StudentProfile, camp: Camp): number {
 function computeProfileScore(student: StudentProfile, camp: Camp): number {
   let score = 0;
 
-  // Grade match (+10)
+  // 1. Grade match (+6)
   if (camp.targetGrades.length === 0 || camp.targetGrades.includes(student.grade)) {
-    score += 10;
+    score += 6;
   }
 
-  // Online bonus (+5) — ทุกคนเข้าได้
+  // 2. Target University match (+5)
+  if (student.targetUniversity) {
+    const cleanUni = student.targetUniversity.toLowerCase().replace(/มหาวิทยาลัย|ม\./g, '').trim();
+    const campText = (camp.location + ' ' + camp.title + ' ' + camp.description).toLowerCase();
+    if (cleanUni && campText.includes(cleanUni)) {
+      score += 5;
+    }
+  }
+
+  // 3. Target Faculty match (+5)
+  if (student.targetFaculty) {
+    const cleanFac = student.targetFaculty.toLowerCase().replace(/คณะ/g, '').trim();
+    const fullCampText = (camp.title + ' ' + camp.description + ' ' + camp.tags.join(' ')).toLowerCase();
+    const campTagsLower = camp.tags.map(t => t.toLowerCase());
+
+    const isMed = /แพทย์|หมอ|พยาบาล|ทันตะ|เภสัช|สาธารณสุข|biology|health|medicine/i.test(cleanFac);
+    const isEng = /วิศว|คอม|หุ่นยนต์|ai|robot|tech|engineer/i.test(cleanFac);
+    const isBiz = /บริหาร|บัญชี|เศรษฐ|การตลาด|bba|business|startup/i.test(cleanFac);
+    const isArt = /ศิลป|ออก|สถาปัตย์|นิเทศ|ดีไซน์|design|creative/i.test(cleanFac);
+    const isSci = /วิทยาศาสตร์|science|ฟิสิกส์|เคมี/i.test(cleanFac);
+
+    const matchesFaculty =
+      fullCampText.includes(cleanFac) ||
+      cleanFac.split(/[\s,()/-]+/).filter(w => w.length >= 3).some(w => fullCampText.includes(w)) ||
+      (isMed && (campTagsLower.includes('medicine') || campTagsLower.includes('health') || campTagsLower.includes('biology'))) ||
+      (isEng && (campTagsLower.includes('technology') || campTagsLower.includes('robotics'))) ||
+      (isBiz && (campTagsLower.includes('business') || campTagsLower.includes('management') || campTagsLower.includes('competition'))) ||
+      (isArt && (campTagsLower.includes('design') || campTagsLower.includes('art') || campTagsLower.includes('creative'))) ||
+      (isSci && (campTagsLower.includes('science') || campTagsLower.includes('chemistry') || campTagsLower.includes('physics')));
+
+    if (matchesFaculty) {
+      score += 5;
+    }
+  }
+
+  // 4. Online bonus (+2)
   if (camp.isOnline) {
-    score += 5;
+    score += 2;
   }
 
-  // Cost: ฟรี → +5, ไม่ฟรี → +2
-  score += camp.cost === 0 ? 5 : 2;
+  // 5. Cost bonus (+2 for free, +1 for paid)
+  score += camp.cost === 0 ? 2 : 1;
 
-  return score;
+  return Math.min(20, score);
 }
 
 // ─── Affinity Score (0-30) ───────────────────────────────────────────────────

@@ -1,6 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
-  mockCamps,
   mockStudent,
 } from '../data/mockData';
 import {
@@ -27,7 +26,7 @@ import type {
 import { useAuth } from '../contexts/AuthContext';
 import { fetchSwipeHistory, recordSwipe, fetchChecklist, saveChecklist, fetchApplications } from '../services/studentService';
 import { useNavigate } from 'react-router-dom';
-import DevTestBar from '../components/DevTestBar';
+
 import CampDetailModal from '../components/CampDetailModal';
 import SwiftPortLogo from '../components/SwiftPortLogo';
 import { getSystemCamps, getActiveSponsoredAds } from '../services/campService';
@@ -301,15 +300,7 @@ export default function StudentDashboard() {
     setTimeout(() => setCompletionToast(null), 2000);
   }, [studentProfile.id, runEvaluateQuests]);
 
-  // Reset quests
-  const handleResetQuests = useCallback(() => {
-    const freshChecklist = initializeChecklist(studentProfile.id, undefined, studentProfile.targetUniversity, studentProfile.targetFaculty);
-    setChecklist(freshChecklist);
-    saveChecklist(studentProfile.id, freshChecklist);
-    localStorage.removeItem(`sp_local_checklist_${studentProfile.id}`);
-    setCompletionToast('📋 รีเซ็ตเควสต์กลับเป็นเริ่มต้นแล้ว');
-    setTimeout(() => setCompletionToast(null), 2000);
-  }, [studentProfile]);
+
 
   // Switch Goal Preset
   const handleSelectGoalPreset = async (preset: typeof PRESET_GOALS[0]) => {
@@ -548,6 +539,7 @@ export default function StudentDashboard() {
             onSwitchToMatch={() => setActiveTab('match')}
             onChangeGoal={() => setShowGoalModal(true)}
             onOpenDetail={(camp: Camp) => setDetailCamp({ camp })}
+            allCamps={allCamps}
           />
         ) : (
           <ProfileDemo
@@ -562,17 +554,12 @@ export default function StudentDashboard() {
             }}
             onChangeGoal={() => setShowGoalModal(true)}
             onSwitchToMatch={() => setActiveTab('match')}
+            allCamps={allCamps}
           />
         )}
       </main>
 
-      {/* Dev Test Bar (Remove when project is finished) */}
-      <DevTestBar 
-        onUndoSwipe={handleUndoSwipe} 
-        onResetSwipes={handleResetSwipes} 
-        onResetQuests={handleResetQuests} 
-        canUndo={history.length > 0} 
-      />
+
     </div>
   );
 }
@@ -685,7 +672,7 @@ function MatchDemo({
             <div className="flex items-center gap-2">
               <h3 className="font-bold text-base">{profile.displayName}</h3>
               <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
-                ม.{profile.grade - 7}
+                ม.{profile.grade - 6}
               </span>
             </div>
             <p className="text-xs mt-0.5" style={{ color: 'var(--color-muted)' }}>
@@ -1064,6 +1051,7 @@ function QuestDemo({
   onSwitchToMatch,
   onChangeGoal,
   onOpenDetail,
+  allCamps,
 }: { 
   profile: StudentProfile; 
   history: SwipeRecord[]; 
@@ -1075,8 +1063,9 @@ function QuestDemo({
   onSwitchToMatch: () => void;
   onChangeGoal: () => void;
   onOpenDetail?: (camp: Camp) => void;
+  allCamps: Camp[];
 }) {
-  const campLookup = useMemo(() => new Map(mockCamps.map(c => [c.id, c])), []);
+  const campLookup = useMemo(() => new Map(allCamps.map(c => [c.id, c])), [allCamps]);
 
   // Filter camps swiped right
   const enrolledCamps = useMemo(() => {
@@ -1401,6 +1390,7 @@ function ProfileDemo({
   onOpenDetail,
   onChangeGoal,
   onSwitchToMatch,
+  allCamps,
 }: {
   profile: StudentProfile;
   applications: CampApplication[];
@@ -1410,8 +1400,9 @@ function ProfileDemo({
   onOpenDetail: (camp: Camp) => void;
   onChangeGoal: () => void;
   onSwitchToMatch: () => void;
+  allCamps: Camp[];
 }) {
-  const campLookup = useMemo(() => new Map(mockCamps.map(c => [c.id, c])), []);
+  const campLookup = useMemo(() => new Map(allCamps.map(c => [c.id, c])), [allCamps]);
 
   // Filter camps swiped right
   const enrolledCamps = useMemo(() => {

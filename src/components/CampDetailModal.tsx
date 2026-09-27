@@ -171,7 +171,7 @@ export default function CampDetailModal({
   const [otpSent, setOtpSent] = useState(false);
   const [countdown, setCountdown] = useState(899); // 14:59 for QR payment
 
-  const orderRefNumber = `SP-${Date.now().toString().slice(-6)}`;
+  const [orderRefNumber] = useState(() => `SP-${Date.now().toString().slice(-6)}`);
 
   // Check if already applied
   useEffect(() => {
@@ -355,17 +355,26 @@ export default function CampDetailModal({
         {step !== 'detail' && (
           <div className="px-5 py-3 border-b flex items-center justify-between" style={{ borderColor: 'var(--color-border)', background: 'var(--color-elevated)' }}>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  if (step === 'payment') setStep('form');
-                  else if (step === 'form') setStep('detail');
-                  else setStep('detail');
-                }}
-                className="text-xs font-bold px-2 py-1 rounded-lg border border-purple-300 dark:border-purple-800 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-950/50 transition-all cursor-pointer"
-              >
-                ← ย้อนกลับ
-              </button>
+              {step !== 'receipt' ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (step === 'payment') setStep('form');
+                    else if (step === 'form') setStep('detail');
+                  }}
+                  className="text-xs font-bold px-2 py-1 rounded-lg border border-purple-300 dark:border-purple-800 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-950/50 transition-all cursor-pointer"
+                >
+                  ← ย้อนกลับ
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="text-xs font-bold px-2 py-1 rounded-lg border border-emerald-300 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-950/50 transition-all cursor-pointer"
+                >
+                  ✓ เสร็จสิ้น
+                </button>
+              )}
               <span className="text-xs font-bold" style={{ color: 'var(--color-text)' }}>
                 {step === 'form' && 'ขั้นตอนที่ 1: กรอกข้อมูลผู้สมัคร'}
                 {step === 'payment' && 'ขั้นตอนที่ 2: สรุปยอดและชำระเงิน'}

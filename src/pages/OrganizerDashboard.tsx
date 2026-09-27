@@ -16,7 +16,7 @@ import type {
 } from '../types/models';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import DevTestBar from '../components/DevTestBar';
+
 import SwiftPortLogo from '../components/SwiftPortLogo';
 import { getSystemCamps, saveOrganizerCamp, saveActiveSponsoredAd, getActiveSponsoredAds } from '../services/campService';
 
@@ -1272,8 +1272,7 @@ export default function OrganizerDashboard() {
         </main>
       </div>
 
-      {/* Dev Test Bar */}
-      <DevTestBar onResetAds={refreshData} />
+
     </div>
   );
 }

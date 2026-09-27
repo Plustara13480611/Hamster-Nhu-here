@@ -1,0 +1,101 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap');
+
+@import "tailwindcss";
+
+/* ─── Design Tokens (CSS Custom Properties) ──────────────────────────────── */
+
+:root {
+  --color-bg: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-elevated: #F1F5F9;
+  --color-border: #E2E8F0;
+  --color-text: #0F172A;
+  --color-muted: #64748B;
+
+  --color-brand-50: #F5F3FF;
+  --color-brand-100: #EDE9FE;
+  --color-brand-200: #DDD6FE;
+  --color-brand-300: #C4B5FD;
+  --color-brand-400: #A78BFA;
+  --color-brand-500: #7C3AED;
+  --color-brand-600: #5B21B6;
+  --color-brand-700: #4C1D95;
+
+  --color-energy-100: #FEF3C7;
+  --color-energy-300: #FCD34D;
+  --color-energy-400: #FBBF24;
+  --color-energy-500: #F59E0B;
+
+  --color-coral-100: #FFEDD5;
+  --color-coral-400: #FB923C;
+  --color-coral-500: #F97316;
+  --color-coral-600: #EA580C;
+
+  --color-sky-100: #E0F2FE;
+  --color-sky-400: #38BDF8;
+  --color-sky-500: #0EA5E9;
+  --color-sky-600: #0284C7;
+}
+
+.dark {
+  --color-bg: #020617;
+  --color-surface: #0F172A;
+  --color-elevated: #1E293B;
+  --color-border: #334155;
+  --color-text: #F8FAFC;
+  --color-muted: #94A3B8;
+}
+
+/* ─── Base Styles ────────────────────────────────────────────────────────── */
+
+html {
+  font-size: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Noto Sans Thai', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-brand-500);
+}
+
+/* ─── Gradient Utilities ─────────────────────────────────────────────────── */
+
+.gradient-brand {
+  background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 50%, #4C1D95 100%);
+}
+
+.gradient-energy {
+  background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
+}
+
+.gradient-card-overlay {
+  background: linear-gradient(to top, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.4) 60%, transparent 100%);
+}
+
+/* ─── Custom Scrollbar ───────────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
+}
